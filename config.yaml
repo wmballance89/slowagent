@@ -1,0 +1,69 @@
+# slowagent configuration. All strategy thresholds live here.
+# Paths are relative to this file unless absolute.
+
+paths:
+  ledger_db: ledger.db
+  log_file: slowagent.log
+
+api:
+  gamma_base: https://gamma-api.polymarket.com
+  clob_base: https://clob.polymarket.com
+  btc_klines: https://api.binance.us/api/v3/klines   # binance.com is geo-blocked in some regions
+  sleep_between_calls: 0.3        # seconds
+  max_retries: 6
+  timeout: 30
+  fetch_order_books: true         # false -> use 1 - bestBid(Yes) as NO ask
+
+account:
+  starting_equity: 5000.0         # paper USD, used on first run only
+  position_pct: 0.05              # 5% of current equity per position
+  slippage: 0.01                  # added to NO ask on entry
+  min_position_usd: 5.0
+  max_ask_over_mid: 0.05          # skip if NO ask exceeds (1 - Yes mid) by more than this (thin/wide book)
+
+# Engine A: crypto upside-longshot NO
+engine_a:
+  enabled: true
+  max_concurrent: 6
+  category: crypto
+  question_include: 'reach|hit'
+  question_exclude: 'dip|fall|drop|below|under|crash'
+  yes_min: 0.10
+  yes_max: 0.40
+  days_to_end_min: 10
+  days_to_end_max: 18
+  min_liquidity: 5000
+  regime:
+    btc_30d_return_max: 0.10       # skip engine entirely if trailing-30d BTC return > +10%
+    near_high_pct: 0.05            # log-only flag: BTC within 5% of 30d high
+
+# Engine B: fresh-listing NO
+engine_b:
+  enabled: true
+  max_concurrent: 20
+  exclude_categories: [politics, crypto, sports, weather, tweets]
+  age_days_min: 2
+  age_days_max: 5
+  min_duration_days: 30            # endDate - createdAt
+  yes_min: 0.20
+  yes_max: 0.80
+  min_volume: 10000
+  min_liquidity: 3000            # skip books too thin to absorb a position
+
+# Engine C: geopolitics / finance-econ / tech-science longshot NO (smaller weight)
+engine_c:
+  enabled: true
+  max_concurrent: 6
+  categories: [geopolitics, finance-econ, tech-science]
+  yes_min: 0.10
+  yes_max: 0.40
+  days_to_end_min: 10
+  days_to_end_max: 18
+  min_liquidity: 5000
+  size_multiplier: 0.5            # half the normal position size
+
+flags:
+  resolution_gap_days: 60          # flag if a resolution date in the description is > this many days after endDate
+
+broker:
+  mode: paper                      # paper | live   (live is a stub and will raise)
